@@ -127,10 +127,10 @@ void PrintMooreAutomata(const MooreAutomata automata) {
     }
 
     cout << "\nTransitions:" << endl;
-    for (size_t i = 0; i < automata.transitions.size(); ++i) {
-        cout << "Input: " << *next(automata.inputs.begin(), i) << endl;
-        for (size_t j = 0; j < automata.transitions[i].size(); ++j) {
-            cout << "State: " << *next(automata.states.begin(), j) << " -> " << automata.transitions[i][j] << endl;
+    for (size_t i = 0; i < automata.transitions.size(); i++) {
+        cout << "Input: " << *next(automata.inputs.begin(), i) << "\n";
+        for (size_t j = 0; j < automata.transitions[i].size(); j++) {
+            cout << "State: " << *next(automata.states.begin(), j) << " -> " << automata.transitions[i][j] << "\n";
         }
     }
 }
@@ -332,7 +332,6 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
             statesCard[nextStateAndOut.first].insert(nextStateAndOut.second);
         }
     }
-
     //for (const auto& pair : statesCard) {
     //    const auto& key = pair.first;
     //    const auto& values = pair.second;
@@ -353,34 +352,32 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
             string newState = MOORE_STATE_CH + std::to_string(mooreStateNum);
             pair<string, string> transition = { state, output };
             NewStatesCard[transition] = newState;
-            /*newStatesCard[newState].first = state;
-            newStatesCard[newState].second = output;*/
             moore.outputs[newState] = output;
             moore.states.insert(newState);
             mooreStateNum++;
         }
     }
 
-    /*for (const auto& pair : NewStatesCard) {
-        const auto& key = pair.first;
-        const auto& value = pair.second;
-        std::cout << "Key: (" << key.first << ", " << key.second << ") -> Value: " << value << std::endl;
-    }*/
+    //for (const auto& pair : NewStatesCard) {
+    //    const auto& key = pair.first;
+    //    const auto& value = pair.second;
+    //    std::cout << "Key: (" << key.first << ", " << key.second << ") -> Value: " << value << std::endl;
+    //}
 
     // окончательная таблица
-    moore.transitions.resize(moore.inputs.size(), std::vector<std::string>(mooreStateNum));
+    moore.transitions.resize(moore.inputs.size());
     int inputIndex = 0;
-    for (const auto& input : mealy.transitions) {
-        for (const auto& transition : input) {
-            // объект mealy.transition имеет вид pair<MealyState, output>
-            string nextMealyStateGroup = transition.first;
-            for (const auto& output : statesCard[nextMealyStateGroup]) {
-                cout << transition.first << " " << transition.second << "\n";
-                moore.transitions[inputIndex].push_back(NewStatesCard[transition]);
+    for (int inputIndex = 0; inputIndex < mealy.transitions.size(); inputIndex++) {
+        int transitionIndex = 0;      
+        for (const auto& state : statesCard) {
+            string nextMealyState = mealy.transitions[inputIndex][transitionIndex].first;
+            for (const auto& outputs : state.second) {
+                moore.transitions[inputIndex].push_back(NewStatesCard[mealy.transitions[inputIndex][transitionIndex]]);
             }
+            transitionIndex++;
         }
-        inputIndex++;
     }
+    cout << moore.transitions[0].size();
     return moore;
 }
 
@@ -394,6 +391,6 @@ int main()
     mealyAut = RemoveUnreachableStatesMealy(mealyAut);
     PrintMealyAutomata(mealyAut);
     MooreAutomata mooreAut = ConvertMealyToMoore(mealyAut);
-   /* PrintMooreAutomata(mooreAut);*/
+    PrintMooreAutomata(mooreAut);
 	return 0;
 }
