@@ -3,6 +3,7 @@
 using namespace std;
 string inputFile = "1_moore.csv";
 string secondFile = "1_mealy.csv";
+string outputFile = "output.csv";
 const string MOORE_STATE_CH = "q";
 
 struct pair_hash {
@@ -46,7 +47,6 @@ MooreAutomata ReadMoore(string& input_file) {
     {
         output_symbols.push_back(output);
     }
-
     // Чтение имен состояний
     getline(file, line);
     stringstream ss_states(line);
@@ -59,7 +59,6 @@ MooreAutomata ReadMoore(string& input_file) {
         aut.outputs[state] = output_symbols[stateIndex];
         stateIndex++;
     }
-
     // Чтение переходов
     while (getline(file, line)) 
     {
@@ -153,6 +152,66 @@ void PrintMealyAutomata(const MealyAutomata mealyAutomata) {
             cout << "State: " << *next(mealyAutomata.states.begin(), j) << " -> " << mealyAutomata.transitions[i][j].first << "/" << mealyAutomata.transitions[i][j].second << endl;
         }
     }
+}
+
+void exportMooreToCSV(MooreAutomata automata, const string& filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Failed to open file: " << filename << endl;
+        return;
+    }
+    // outputs
+    for (const auto& output : automata.outputs) {
+        file << ";" << output.second;
+    }
+    file << endl;
+    for (const auto& state : automata.outputs) {
+        file << ";" << state.first;
+    }
+    file << endl;
+    // inputs and transitions
+    int inputIndex = 0;
+    auto statesQual = automata.states.size();
+    for (const string& input : automata.inputs) {
+        file << input << ";";
+        for (int stateIndex = 0; stateIndex < automata.states.size(); stateIndex++) {
+            string nextState = automata.transitions[inputIndex][stateIndex];
+            file << nextState;
+            if (stateIndex != automata.states.size() - 1) {
+                file << ";";
+            }
+        }
+        file << endl;
+        inputIndex++;
+    }
+    file.close();
+}
+
+void exportMealyToCSV(MealyAutomata automata, const string& filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Failed to open file: " << filename << endl;
+        return;
+    }
+    for (const auto& state : automata.states) {
+        file << ";" << state;
+    }
+    file << endl;
+    int inputIndex = 0;
+    auto statesQual = automata.states.size();
+    for (const string& input : automata.inputs) {
+        file << input << ";";
+        for (int stateIndex = 0; stateIndex < automata.states.size(); stateIndex++) {
+            auto nextState = automata.transitions[inputIndex][stateIndex];
+            file << nextState.first << "/" << nextState.second;
+            if (stateIndex != automata.states.size() - 1) {
+                file << ";";
+            }
+        }
+        file << endl;
+        inputIndex++;
+    }
+    file.close();
 }
 
 MooreAutomata RemoveUnreachableStatesMoore(MooreAutomata& automata) {
@@ -332,17 +391,6 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
             statesCard[nextStateAndOut.first].insert(nextStateAndOut.second);
         }
     }
-    //for (const auto& pair : statesCard) {
-    //    const auto& key = pair.first;
-    //    const auto& values = pair.second;
-
-    //    std::cout << "Key: " << key << "\nValues: ";
-    //    for (const auto& value : values) {
-    //        std::cout << value << " ";
-    //    }
-    //    std::cout << std::endl; // New line after each key-value pair
-    //}
-
     int mooreStateNum = 0;
     // {{ MealyState, output }, MooreState}
     unordered_map<pair<string, string>,string, pair_hash> NewStatesCard;
@@ -357,13 +405,6 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
             mooreStateNum++;
         }
     }
-
-    //for (const auto& pair : NewStatesCard) {
-    //    const auto& key = pair.first;
-    //    const auto& value = pair.second;
-    //    std::cout << "Key: (" << key.first << ", " << key.second << ") -> Value: " << value << std::endl;
-    //}
-
     // окончательная таблица
     moore.transitions.resize(moore.inputs.size());
     int inputIndex = 0;
@@ -377,20 +418,20 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
             transitionIndex++;
         }
     }
-    cout << moore.transitions[0].size();
     return moore;
 }
 
 int main()
 {
-    /*MooreAutomata aut = ReadMoore(inputFile);
+    MooreAutomata aut = ReadMoore(inputFile);
     aut = RemoveUnreachableStatesMoore(aut);
     MealyAutomata mealyAut = ConvertMooreToMealy(aut);
-    PrintMealyAutomata(mealyAut);*/
-    MealyAutomata mealyAut = ReadMealy(secondFile);
-    mealyAut = RemoveUnreachableStatesMealy(mealyAut);
-    PrintMealyAutomata(mealyAut);
-    MooreAutomata mooreAut = ConvertMealyToMoore(mealyAut);
-    PrintMooreAutomata(mooreAut);
+    exportMealyToCSV(mealyAut, outputFile);
+    //MealyAutomata mealyAut = ReadMealy(secondFile);
+    //mealyAut = RemoveUnreachableStatesMealy(mealyAut);
+    ///*PrintMealyAutomata(mealyAut);*/
+    //MooreAutomata mooreAut = ConvertMealyToMoore(mealyAut);
+    //exportMooreToCSV(mooreAut, outputFile);
+    /*PrintMooreAutomata(mooreAut);*/
 	return 0;
 }
