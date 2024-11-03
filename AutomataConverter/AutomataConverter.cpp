@@ -1,9 +1,8 @@
-﻿#include "MealyMooreConverter.h"
+﻿#include "AutomataConverter.h"
 
 using namespace std;
-string inputFile = "1_moore.csv";
-string secondFile = "1_mealy.csv";
-string outputFile = "output.csv";
+const string MEALY_TO_MOORE_PARAM = "mealy-to-moore";
+const string MOORE_TO_MEALY_PARAM = "moore-to-mealy";
 const string MOORE_STATE_CH = "q";
 
 struct pair_hash {
@@ -17,7 +16,7 @@ struct pair_hash {
 
 struct MooreAutomata {
     unordered_map<string, string> outputs;
-    vector<vector<string>> transitions;  
+    vector<vector<string>> transitions;
     unordered_set<string> states;
     unordered_set<string> inputs;
 };
@@ -32,7 +31,7 @@ MooreAutomata ReadMoore(string& input_file) {
     MooreAutomata aut;
     ifstream file(input_file);
     string line;
-    if (!file.is_open()) 
+    if (!file.is_open())
     {
         cerr << "Error: Could not open file " << input_file << endl;
         return aut;
@@ -43,7 +42,7 @@ MooreAutomata ReadMoore(string& input_file) {
     string output;
     getline(ss_outputs, output, ';'); // Пропуск первого столбца
     vector<string> output_symbols;
-    while (getline(ss_outputs, output, ';')) 
+    while (getline(ss_outputs, output, ';'))
     {
         output_symbols.push_back(output);
     }
@@ -53,21 +52,21 @@ MooreAutomata ReadMoore(string& input_file) {
     string state;
     getline(ss_states, state, ';'); // Пропуск первого столбца
     int stateIndex = 0;
-    while (getline(ss_states, state, ';')) 
+    while (getline(ss_states, state, ';'))
     {
         aut.states.insert(state);
         aut.outputs[state] = output_symbols[stateIndex];
         stateIndex++;
     }
     // Чтение переходов
-    while (getline(file, line)) 
+    while (getline(file, line))
     {
         stringstream ss(line);
         string input, transition;
         getline(ss, input, ';');
         aut.inputs.insert(input);
         vector<string> state_transitions;
-        while (getline(ss, transition, ';')) 
+        while (getline(ss, transition, ';'))
         {
             state_transitions.push_back(transition);
         }
@@ -107,51 +106,6 @@ MealyAutomata ReadMealy(const string& input_file) {
         mealyAutomata.transitions.push_back(mealyTransitions);
     }
     return mealyAutomata;
-}
-
-void PrintMooreAutomata(const MooreAutomata automata) {
-    cout << "Outputs:" << endl;
-    for (const auto& pair : automata.outputs) {
-        cout << pair.first << " -> " << pair.second << endl;
-    }
-
-    cout << "\nStates:" << endl;
-    for (const auto& state : automata.states) {
-        cout << state << endl;
-    }
-
-    cout << "\nInputs:" << endl;
-    for (const auto& input : automata.inputs) {
-        cout << input << endl;
-    }
-
-    cout << "\nTransitions:" << endl;
-    for (size_t i = 0; i < automata.transitions.size(); i++) {
-        cout << "Input: " << *next(automata.inputs.begin(), i) << "\n";
-        for (size_t j = 0; j < automata.transitions[i].size(); j++) {
-            cout << "State: " << *next(automata.states.begin(), j) << " -> " << automata.transitions[i][j] << "\n";
-        }
-    }
-}
-
-void PrintMealyAutomata(const MealyAutomata mealyAutomata) {
-    cout << "States:" << endl;
-    for (const auto& state : mealyAutomata.states) {
-        cout << state << endl;
-    }
-
-    cout << "\nInputs:" << endl;
-    for (const auto& input : mealyAutomata.inputs) {
-        cout << input << endl;
-    }
-
-    cout << "\nTransitions:" << endl;
-    for (size_t i = 0; i < mealyAutomata.transitions.size(); ++i) {
-        cout << "Input: " << *next(mealyAutomata.inputs.begin(), i) << endl;
-        for (size_t j = 0; j < mealyAutomata.transitions[i].size(); ++j) {
-            cout << "State: " << *next(mealyAutomata.states.begin(), j) << " -> " << mealyAutomata.transitions[i][j].first << "/" << mealyAutomata.transitions[i][j].second << endl;
-        }
-    }
 }
 
 void exportMooreToCSV(MooreAutomata automata, const string& filename) {
@@ -362,7 +316,7 @@ MealyAutomata ConvertMooreToMealy(MooreAutomata moore) {
     for (const auto& state : moore.states) {
         stateIndexMap[state] = index;
         index++;
-    }   
+    }
     // Заполняем таблицу переходов автомата Мили
     for (int inputIndex = 0; inputIndex < moore.inputs.size(); inputIndex++) {
         for (int stateIndex = 0; stateIndex < moore.states.size(); stateIndex++) {
@@ -370,8 +324,8 @@ MealyAutomata ConvertMooreToMealy(MooreAutomata moore) {
             string nextState = moore.transitions[inputIndex][stateIndex];
             if (!nextState.empty() && nextState != " ")
             {
-               string output = moore.outputs.at(nextState);
-               mealy.transitions[inputIndex][stateIndex] = { nextState, output };
+                string output = moore.outputs.at(nextState);
+                mealy.transitions[inputIndex][stateIndex] = { nextState, output };
             }
         }
     }
@@ -385,7 +339,7 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
     moore.inputs = mealy.inputs;
     // {MealyState, outputs}
     map<string, set<string>> statesCard;
-    for (int inputIndex = 0; inputIndex < moore.inputs.size(); inputIndex++) {    
+    for (int inputIndex = 0; inputIndex < moore.inputs.size(); inputIndex++) {
         for (int stateIndex = 0; stateIndex < mealy.states.size(); stateIndex++) {
             pair<string, string> nextStateAndOut = mealy.transitions[inputIndex][stateIndex];
             statesCard[nextStateAndOut.first].insert(nextStateAndOut.second);
@@ -393,7 +347,7 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
     }
     int mooreStateNum = 0;
     // {{ MealyState, output }, MooreState}
-    unordered_map<pair<string, string>,string, pair_hash> NewStatesCard;
+    unordered_map<pair<string, string>, string, pair_hash> NewStatesCard;
     for (auto it = statesCard.begin(); it != statesCard.end(); ++it) {
         string state = it->first;
         for (const auto& output : it->second) {
@@ -409,7 +363,7 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
     moore.transitions.resize(moore.inputs.size());
     int inputIndex = 0;
     for (int inputIndex = 0; inputIndex < mealy.transitions.size(); inputIndex++) {
-        int transitionIndex = 0;      
+        int transitionIndex = 0;
         for (const auto& state : statesCard) {
             string nextMealyState = mealy.transitions[inputIndex][transitionIndex].first;
             for (const auto& outputs : state.second) {
@@ -421,17 +375,34 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
     return moore;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    MooreAutomata aut = ReadMoore(inputFile);
-    aut = RemoveUnreachableStatesMoore(aut);
-    MealyAutomata mealyAut = ConvertMooreToMealy(aut);
-    exportMealyToCSV(mealyAut, outputFile);
-    //MealyAutomata mealyAut = ReadMealy(secondFile);
-    //mealyAut = RemoveUnreachableStatesMealy(mealyAut);
-    ///*PrintMealyAutomata(mealyAut);*/
-    //MooreAutomata mooreAut = ConvertMealyToMoore(mealyAut);
-    //exportMooreToCSV(mooreAut, outputFile);
-    /*PrintMooreAutomata(mooreAut);*/
-	return 0;
+    if (argc != 4) {
+        cerr << "Usage: " <<"<work param> <input_file> <output_file>" << endl;
+        return 0;
+    }
+    string workParam = argv[1];
+    string inputFile = argv[2];
+    string outputFile = argv[3];
+    if (workParam != MEALY_TO_MOORE_PARAM && workParam != MOORE_TO_MEALY_PARAM)
+    {
+        cerr << "Wrong param" << endl;
+        return 0;
+    }
+    if (workParam == MEALY_TO_MOORE_PARAM) {
+        MealyAutomata mealyAut = ReadMealy(inputFile);
+        mealyAut = RemoveUnreachableStatesMealy(mealyAut);
+        MooreAutomata mooreAut = ConvertMealyToMoore(mealyAut);
+        exportMooreToCSV(mooreAut, outputFile);
+    }
+    else
+    {
+        if (workParam == MOORE_TO_MEALY_PARAM) {
+            MooreAutomata aut = ReadMoore(inputFile);
+            aut = RemoveUnreachableStatesMoore(aut);
+            MealyAutomata mealyAut = ConvertMooreToMealy(aut);
+            exportMealyToCSV(mealyAut, outputFile);
+        }
+    }
+    return 1;
 }
