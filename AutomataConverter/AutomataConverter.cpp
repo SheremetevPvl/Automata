@@ -17,14 +17,14 @@ struct pair_hash {
 struct MooreAutomata {
     unordered_map<string, string> outputs;
     vector<vector<string>> transitions;
-    unordered_set<string> states;
-    unordered_set<string> inputs;
+    vector<string> statesTable;
+    vector<string> inputs;
 };
 
 struct MealyAutomata {
     vector<vector<pair<string, string>>> transitions;
-    unordered_set<string> states;
-    unordered_set<string> inputs;
+    vector<string> statesTable;
+    vector<string> inputs;
 };
 
 MooreAutomata ReadMoore(string& input_file) {
@@ -54,7 +54,7 @@ MooreAutomata ReadMoore(string& input_file) {
     int stateIndex = 0;
     while (getline(ss_states, state, ';'))
     {
-        aut.states.insert(state);
+        aut.statesTable.push_back(state);
         aut.outputs[state] = output_symbols[stateIndex];
         stateIndex++;
     }
@@ -64,7 +64,7 @@ MooreAutomata ReadMoore(string& input_file) {
         stringstream ss(line);
         string input, transition;
         getline(ss, input, ';');
-        aut.inputs.insert(input);
+        aut.inputs.push_back(input);
         vector<string> state_transitions;
         while (getline(ss, transition, ';'))
         {
@@ -89,14 +89,14 @@ MealyAutomata ReadMealy(const string& input_file) {
     string state;
     getline(ss_states, state, ';'); // Пропуск первого столбца
     while (getline(ss_states, state, ';')) {
-        mealyAutomata.states.insert(state);
+        mealyAutomata.statesTable.push_back(state);
     }
     // Чтение переходов
     while (getline(file, line)) {
         stringstream ss(line);
         string input, transition;
         getline(ss, input, ';');
-        mealyAutomata.inputs.insert(input);
+        mealyAutomata.inputs.push_back(input);
         vector<pair<string, string>> mealyTransitions;
         while (getline(ss, transition, ';')) {
             string nextState = transition.substr(0, transition.find('/'));
@@ -108,30 +108,30 @@ MealyAutomata ReadMealy(const string& input_file) {
     return mealyAutomata;
 }
 
-void exportMooreToCSV(MooreAutomata automata, const string& filename) {
+void ExportMooreToCSV(MooreAutomata automata, const string& filename) {
     ofstream file(filename);
     if (!file.is_open()) {
         cerr << "Failed to open file: " << filename << endl;
         return;
     }
     // outputs
-    for (const auto& output : automata.outputs) {
-        file << ";" << output.second;
+    for (const auto& state : automata.statesTable) {
+        file << ";" << automata.outputs[state];
     }
     file << endl;
-    for (const auto& state : automata.outputs) {
-        file << ";" << state.first;
+    for (const auto& state : automata.statesTable) {
+        file << ";" << state;
     }
     file << endl;
     // inputs and transitions
     int inputIndex = 0;
-    auto statesQual = automata.states.size();
+    auto statesQual = automata.statesTable.size();
     for (const string& input : automata.inputs) {
         file << input << ";";
-        for (int stateIndex = 0; stateIndex < automata.states.size(); stateIndex++) {
+        for (int stateIndex = 0; stateIndex < automata.statesTable.size(); stateIndex++) {
             string nextState = automata.transitions[inputIndex][stateIndex];
             file << nextState;
-            if (stateIndex != automata.states.size() - 1) {
+            if (stateIndex != automata.statesTable.size() - 1) {
                 file << ";";
             }
         }
@@ -141,24 +141,24 @@ void exportMooreToCSV(MooreAutomata automata, const string& filename) {
     file.close();
 }
 
-void exportMealyToCSV(MealyAutomata automata, const string& filename) {
+void ExportMealyToCSV(MealyAutomata automata, const string& filename) {
     ofstream file(filename);
     if (!file.is_open()) {
         cerr << "Failed to open file: " << filename << endl;
         return;
     }
-    for (const auto& state : automata.states) {
+    for (const auto& state : automata.statesTable) {
         file << ";" << state;
     }
     file << endl;
     int inputIndex = 0;
-    auto statesQual = automata.states.size();
+    auto statesQual = automata.statesTable.size();
     for (const string& input : automata.inputs) {
         file << input << ";";
-        for (int stateIndex = 0; stateIndex < automata.states.size(); stateIndex++) {
+        for (int stateIndex = 0; stateIndex < automata.statesTable.size(); stateIndex++) {
             auto nextState = automata.transitions[inputIndex][stateIndex];
             file << nextState.first << "/" << nextState.second;
-            if (stateIndex != automata.states.size() - 1) {
+            if (stateIndex != automata.statesTable.size() - 1) {
                 file << ";";
             }
         }
@@ -168,12 +168,16 @@ void exportMealyToCSV(MealyAutomata automata, const string& filename) {
     file.close();
 }
 
-MooreAutomata RemoveUnreachableStatesMoore(MooreAutomata& automata) {
+MooreAutomata RemoveUnreachableStatesMoore(MooreAutomata automata) {
     unordered_set<string> reachableStates;
     queue<string> toVisit;
+    MooreAutomata procAut;
+    procAut.outputs = automata.outputs;
+    procAut.inputs = automata.inputs;
+    procAut.transitions.resize(procAut.inputs.size());
 
     // Начинаем с начального состояния
-    string startState = *automata.states.begin();
+    string startState = automata.statesTable[0];
     toVisit.push(startState);
     reachableStates.insert(startState);
 
@@ -182,72 +186,78 @@ MooreAutomata RemoveUnreachableStatesMoore(MooreAutomata& automata) {
         string currentState = toVisit.front();
         toVisit.pop();
 
+        int stateIndex = 0;
         // Находим индекс текущего состояния
-        auto stateIt = find(automata.states.begin(), automata.states.end(), currentState);
-        if (stateIt == automata.states.end()) {
-            cerr << "Error: State " << currentState << " not found in states set." << endl;
-            continue;
+        for (const auto& state : automata.statesTable)
+        {
+            if (currentState == state)
+            {
+                break;
+            }
+            stateIndex++;
         }
-        int stateIndex = distance(automata.states.begin(), stateIt);
 
         // Проходим по всем входным символам
-        for (size_t i = 0; i < automata.transitions.size(); ++i) {
-            try {
-                string nextState = automata.transitions.at(i).at(stateIndex);
-                if (reachableStates.find(nextState) == reachableStates.end()) {
-                    reachableStates.insert(nextState);
-                    toVisit.push(nextState);
-                }
+        for (size_t i = 0; i < automata.transitions.size(); i++) {
+            if (stateIndex >= automata.transitions[i].size()) {
+                cerr << "Error: State index out of range in transitions matrix." << endl;
+                continue;
             }
-            catch (const out_of_range& e) {
-                cerr << "Error: Out of range access in transitions matrix." << endl;
+            string nextState = automata.transitions[i][stateIndex];
+            if (reachableStates.find(nextState) == reachableStates.end()) {
+                reachableStates.insert(nextState);
+                toVisit.push(nextState);
             }
         }
     }
 
     // Удаляем недостижимые состояния
-    for (auto it = automata.states.begin(); it != automata.states.end();) {
-        if (reachableStates.find(*it) == reachableStates.end()) {
-            it = automata.states.erase(it);
+    vector<pair<string, int>>unreachableStatesWithIndex;
+    int currentStateIndex = 0;
+    for (const auto& state : automata.statesTable) {
+        if (reachableStates.find(state) == reachableStates.end()) {
+            unreachableStatesWithIndex.push_back({ state, currentStateIndex });
         }
-        else {
-            ++it;
-        }
+        currentStateIndex++;
     }
-
-    // Удаляем переходы в недостижимые состояния
-    for (auto& transitions : automata.transitions) {
-        for (auto it = transitions.begin(); it != transitions.end();) {
-            if (reachableStates.find(*it) == reachableStates.end()) {
-                it = transitions.erase(it);
+    currentStateIndex = 0;
+    for (const auto& state : unreachableStatesWithIndex) {
+        procAut.outputs.erase(state.first);
+        for (int stateIndex = currentStateIndex; stateIndex < automata.statesTable.size(); stateIndex++) {
+            currentStateIndex++;
+            if (automata.statesTable[stateIndex] == state.first) {
+                break;
             }
             else {
-                ++it;
+                procAut.statesTable.push_back(automata.statesTable[stateIndex]);
+                for (int input = 0; input < automata.transitions.size(); input++) {
+                    procAut.transitions[input].push_back(automata.transitions[input][stateIndex]);
+                }
+            }
+        }
+    }
+    if (currentStateIndex < automata.statesTable.size() - 1) {
+        for (int stateIndex = currentStateIndex; stateIndex < automata.statesTable.size(); stateIndex++) {
+            procAut.statesTable.push_back(automata.statesTable[stateIndex]);
+            for (int input = 0; input < automata.transitions.size(); input++) {
+                procAut.transitions[input].push_back(automata.transitions[input][stateIndex]);
             }
         }
     }
 
-    // Удаляем выходные символы для недостижимых состояний
-    for (auto it = automata.outputs.begin(); it != automata.outputs.end();) {
-        if (reachableStates.find(it->first) == reachableStates.end()) {
-            it = automata.outputs.erase(it);
-        }
-        else {
-            ++it;
-        }
-    }
-
-    MooreAutomata ProcAut = automata;
-    return ProcAut;
+    return procAut;
 }
 
-MealyAutomata RemoveUnreachableStatesMealy(MealyAutomata& automata)
+MealyAutomata RemoveUnreachableStatesMealy(MealyAutomata automata)
 {
     unordered_set<string> reachableStates;
     queue<string> toVisit;
+    MealyAutomata procAut;
+    procAut.inputs = automata.inputs;
+    procAut.transitions.resize(procAut.inputs.size());
 
     // Начинаем с начального состояния
-    string startState = *automata.states.begin();
+    string startState = automata.statesTable[0];
     toVisit.push(startState);
     reachableStates.insert(startState);
 
@@ -256,70 +266,82 @@ MealyAutomata RemoveUnreachableStatesMealy(MealyAutomata& automata)
         string currentState = toVisit.front();
         toVisit.pop();
 
+        int stateIndex = 0;
         // Находим индекс текущего состояния
-        auto stateIt = find(automata.states.begin(), automata.states.end(), currentState);
-        if (stateIt == automata.states.end()) {
-            cerr << "Error: State " << currentState << " not found in states set." << endl;
-            continue;
+        for (const auto& state : automata.statesTable)
+        {
+            if (currentState == state)
+            {
+                break;
+            }
+            stateIndex++;
         }
-        int stateIndex = distance(automata.states.begin(), stateIt);
 
         // Проходим по всем входным символам
-        for (size_t i = 0; i < automata.transitions.size(); ++i) {
-            try {
-                string nextState = automata.transitions.at(i).at(stateIndex).first;
-                if (reachableStates.find(nextState) == reachableStates.end()) {
-                    reachableStates.insert(nextState);
-                    toVisit.push(nextState);
-                }
+        for (size_t i = 0; i < automata.transitions.size(); i++) {
+            if (stateIndex >= automata.transitions[i].size()) {
+                cerr << "Error: State index out of range in transitions matrix." << endl;
+                continue;
             }
-            catch (const out_of_range& e) {
-                cerr << "Error: Out of range access in transitions matrix." << endl;
+            string nextState = automata.transitions[i][stateIndex].first;
+            if (reachableStates.find(nextState) == reachableStates.end()) {
+                reachableStates.insert(nextState);
+                toVisit.push(nextState);
             }
         }
     }
 
     // Удаляем недостижимые состояния
-    for (auto it = automata.states.begin(); it != automata.states.end();) {
-        if (reachableStates.find(*it) == reachableStates.end()) {
-            it = automata.states.erase(it);
+    vector<pair<string, int>>unreachableStatesWithIndex;
+    int currentStateIndex = 0;
+    for (const auto& state : automata.statesTable) {
+        if (reachableStates.find(state) == reachableStates.end()) {
+            unreachableStatesWithIndex.push_back({ state, currentStateIndex });
         }
-        else {
-            ++it;
-        }
+        currentStateIndex++;
     }
-
-    for (auto& transitions : automata.transitions) {
-        for (auto it = transitions.begin(); it != transitions.end();) {
-            string state = it->first;
-            if (reachableStates.find(state) == reachableStates.end()) {
-                it = transitions.erase(it);
+    currentStateIndex = 0;
+    for (const auto& state : unreachableStatesWithIndex) {
+        for (int stateIndex = currentStateIndex; stateIndex < automata.statesTable.size(); stateIndex++) {
+            currentStateIndex++;
+            if (automata.statesTable[stateIndex] == state.first) {
+                break;
             }
             else {
-                ++it;
+                procAut.statesTable.push_back(automata.statesTable[stateIndex]);
+                for (int input = 0; input < automata.transitions.size(); input++) {
+                    procAut.transitions[input].push_back(automata.transitions[input][stateIndex]);
+                }
             }
         }
     }
-    MealyAutomata ProcAut = automata;
-    return ProcAut;
+    if (currentStateIndex < automata.statesTable.size() - 1) {
+        for (int stateIndex = currentStateIndex; stateIndex < automata.statesTable.size(); stateIndex++) {
+            procAut.statesTable.push_back(automata.statesTable[stateIndex]);
+            for (int input = 0; input < automata.transitions.size(); input++) {
+                procAut.transitions[input].push_back(automata.transitions[input][stateIndex]);
+            }
+        }
+    }
+    return procAut;
 }
 
 MealyAutomata ConvertMooreToMealy(MooreAutomata moore) {
     MealyAutomata mealy;
 
-    mealy.states = moore.states;
+    mealy.statesTable = moore.statesTable;
     mealy.inputs = moore.inputs;
 
-    mealy.transitions.resize(moore.inputs.size(), std::vector<std::pair<std::string, std::string>>(moore.states.size()));
+    mealy.transitions.resize(moore.inputs.size(), std::vector<std::pair<std::string, std::string>>(moore.statesTable.size()));
     std::unordered_map<std::string, int> stateIndexMap;
     int index = 0;
-    for (const auto& state : moore.states) {
+    for (const auto& state : moore.statesTable) {
         stateIndexMap[state] = index;
         index++;
     }
     // Заполняем таблицу переходов автомата Мили
     for (int inputIndex = 0; inputIndex < moore.inputs.size(); inputIndex++) {
-        for (int stateIndex = 0; stateIndex < moore.states.size(); stateIndex++) {
+        for (int stateIndex = 0; stateIndex < moore.statesTable.size(); stateIndex++) {
             // Находим следующее состояние по текущему состоянию и входу
             string nextState = moore.transitions[inputIndex][stateIndex];
             if (!nextState.empty() && nextState != " ")
@@ -332,44 +354,89 @@ MealyAutomata ConvertMooreToMealy(MooreAutomata moore) {
     return mealy;
 }
 
-MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
+MooreAutomata AltConvertMealyToMoore(MealyAutomata mealy)
 {
     MooreAutomata moore;
 
     moore.inputs = mealy.inputs;
+    // {MealyState, transitions}
+    map<string, vector<pair<string, string>>> transitionTable;
     // {MealyState, outputs}
     map<string, set<string>> statesCard;
-    for (int inputIndex = 0; inputIndex < moore.inputs.size(); inputIndex++) {
-        for (int stateIndex = 0; stateIndex < mealy.states.size(); stateIndex++) {
+    bool needNewStates = false;
+    for (int stateIndex = 0; stateIndex < mealy.statesTable.size(); stateIndex++) {
+        for (int inputIndex = 0; inputIndex < moore.inputs.size(); inputIndex++) {
             pair<string, string> nextStateAndOut = mealy.transitions[inputIndex][stateIndex];
             statesCard[nextStateAndOut.first].insert(nextStateAndOut.second);
+            transitionTable[mealy.statesTable[stateIndex]].push_back(nextStateAndOut);
+            if (statesCard[nextStateAndOut.first].size() > 1) {
+                needNewStates = true;
+            }
         }
     }
     int mooreStateNum = 0;
     // {{ MealyState, output }, MooreState}
     unordered_map<pair<string, string>, string, pair_hash> NewStatesCard;
-    for (auto it = statesCard.begin(); it != statesCard.end(); ++it) {
-        string state = it->first;
-        for (const auto& output : it->second) {
-            string newState = MOORE_STATE_CH + std::to_string(mooreStateNum);
-            pair<string, string> transition = { state, output };
-            NewStatesCard[transition] = newState;
-            moore.outputs[newState] = output;
-            moore.states.insert(newState);
-            mooreStateNum++;
+    vector<string> orderedMealyStates;
+    // назначаем для первого состояния
+    auto firstState = mealy.statesTable[0];
+    if (!needNewStates) {
+        moore.statesTable = mealy.statesTable;
+        orderedMealyStates = mealy.statesTable;
+    }
+    else {
+        orderedMealyStates.push_back(firstState);
+    }
+    for (const auto& output : statesCard[firstState]) {
+        string newState;
+        if (needNewStates) {
+            newState = MOORE_STATE_CH + std::to_string(mooreStateNum);
+            moore.statesTable.push_back(newState);
+        }
+        else {
+            newState = firstState;
+        }
+        pair<string, string> transition = { firstState, output };
+        NewStatesCard[transition] = newState;
+        moore.outputs[newState] = output;
+        mooreStateNum++;
+    }
+    moore.transitions.resize(moore.inputs.size());
+    int transitionIndex = 0;
+    for (int transitionIndex = 0; transitionIndex < mealy.transitions[0].size(); transitionIndex++)
+    {
+        //cout << transitionIndex << "\n";
+        for (int input = 0; input < mealy.inputs.size(); input++) {
+            auto next = mealy.transitions[input][transitionIndex];
+            // проверка, что не присвоили новый state раньше
+            if (NewStatesCard.find(next) == NewStatesCard.end()) {
+                if (needNewStates) {
+                    orderedMealyStates.push_back(next.first);
+                    for (const auto& output : statesCard[next.first]) {
+                        string newState = MOORE_STATE_CH + std::to_string(mooreStateNum);
+                        pair<string, string> transition = { next.first, output };
+                        NewStatesCard[transition] = newState;
+                        moore.outputs[newState] = output;
+                        moore.statesTable.push_back(newState);
+                        mooreStateNum++;
+                    }
+                }
+                else {
+                    string state = next.first;
+                    pair<string, string> transition = { next.first, next.second };
+                    NewStatesCard[transition] = state;
+                    moore.outputs[state] = next.second;
+                }
+            }
         }
     }
-    // окончательная таблица
-    moore.transitions.resize(moore.inputs.size());
-    int inputIndex = 0;
-    for (int inputIndex = 0; inputIndex < mealy.transitions.size(); inputIndex++) {
-        int transitionIndex = 0;
-        for (const auto& state : statesCard) {
-            string nextMealyState = mealy.transitions[inputIndex][transitionIndex].first;
-            for (const auto& outputs : state.second) {
-                moore.transitions[inputIndex].push_back(NewStatesCard[mealy.transitions[inputIndex][transitionIndex]]);
+    for (auto& mealyState : orderedMealyStates) {
+        int input = 0;
+        for (auto& transition : transitionTable[mealyState]) {
+            for (auto& output : statesCard[mealyState]) {
+                moore.transitions[input].push_back(NewStatesCard[transition]);
             }
-            transitionIndex++;
+            input++;
         }
     }
     return moore;
@@ -378,8 +445,8 @@ MooreAutomata ConvertMealyToMoore(MealyAutomata mealy)
 int main(int argc, char* argv[])
 {
     if (argc != 4) {
-        cerr << "Usage: " <<"<work param> <input_file> <output_file>" << endl;
-        return 0;
+        cerr << "Usage: " << "<work param> <input_file> <output_file>" << endl;
+        return 1;
     }
     string workParam = argv[1];
     string inputFile = argv[2];
@@ -387,13 +454,13 @@ int main(int argc, char* argv[])
     if (workParam != MEALY_TO_MOORE_PARAM && workParam != MOORE_TO_MEALY_PARAM)
     {
         cerr << "Wrong param" << endl;
-        return 0;
+        return 1;
     }
     if (workParam == MEALY_TO_MOORE_PARAM) {
         MealyAutomata mealyAut = ReadMealy(inputFile);
         mealyAut = RemoveUnreachableStatesMealy(mealyAut);
-        MooreAutomata mooreAut = ConvertMealyToMoore(mealyAut);
-        exportMooreToCSV(mooreAut, outputFile);
+        MooreAutomata mooreAut = AltConvertMealyToMoore(mealyAut);
+        ExportMooreToCSV(mooreAut, outputFile);
     }
     else
     {
@@ -401,8 +468,8 @@ int main(int argc, char* argv[])
             MooreAutomata aut = ReadMoore(inputFile);
             aut = RemoveUnreachableStatesMoore(aut);
             MealyAutomata mealyAut = ConvertMooreToMealy(aut);
-            exportMealyToCSV(mealyAut, outputFile);
+            ExportMealyToCSV(mealyAut, outputFile);
         }
     }
-    return 1;
+    return 0;
 }
