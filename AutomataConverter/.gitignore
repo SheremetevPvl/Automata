@@ -1,0 +1,13 @@
+# Ignore build directory
+build/
+
+# Ignore generated files
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# Ignore IDE files
+.idea/
+.vscode/
