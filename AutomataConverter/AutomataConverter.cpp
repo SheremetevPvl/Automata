@@ -512,7 +512,6 @@ int main(int argc, char* argv[])
     if (workParam == MEALY_TO_MOORE_PARAM) {
         MealyAutomata mealyAut = ReadMealy(inputFile);
         mealyAut = RemoveUnreachableStatesMealy(mealyAut);
-        PrintMealyAutomata(mealyAut);
         MooreAutomata mooreAut = AltConvertMealyToMoore(mealyAut);
         ExportMooreToCSV(mooreAut, outputFile);
     }
