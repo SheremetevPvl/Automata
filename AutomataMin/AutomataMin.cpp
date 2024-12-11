@@ -360,9 +360,11 @@ void LookForSameState(vector<pair<string, string>> nextStates, int statesToCheck
 void LookForSameOutputs(vector<pair<string, string>> outputs, int statesToCheck, vector<string>& statesTable, map<string, string>& classTable, vector<vector<pair<string, string>>> transitions,
     string stateName, int& classNum, vector<string> autStates) {
     bool same = false;
+    bool metMistake = false;
     for (int state = 0; state < statesToCheck; state++) {
         for (int input = 0; input < transitions.size(); input++) {
             if (outputs[input].second != transitions[input][state].second) {
+                same = false;
                 break;
             }
             same = true;
@@ -554,6 +556,9 @@ int main(int argc, char* argv[])
     string workParam = argv[1];
     string inputFile = argv[2];
     string outputFile = argv[3];
+    /*string workParam = MEALY_PARAM;
+    string inputFile = "source_mealy.csv";
+    string outputFile = "output.csv";*/
     if (workParam != MEALY_PARAM && workParam != MOORE_PARAM)
     {
         cerr << "Wrong param" << endl;
