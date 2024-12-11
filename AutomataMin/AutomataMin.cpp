@@ -340,6 +340,7 @@ void LookForSameState(vector<pair<string, string>> nextStates, int statesToCheck
     for (int state = 0; state < statesToCheck; state++) {
         for (int input = 0; input < transitions.size(); input++) {
             if (classTable[nextStates[input].first] != classTable[transitions[input][state].first] || classTable[stateName] != classTable[aut.statesTable[state]]) {
+                same = false;
                 break;
             }
             same = true;
@@ -557,7 +558,7 @@ int main(int argc, char* argv[])
     string inputFile = argv[2];
     string outputFile = argv[3];
     /*string workParam = MEALY_PARAM;
-    string inputFile = "source_mealy.csv";
+    string inputFile = "2_source_mealy.csv";
     string outputFile = "output.csv";*/
     if (workParam != MEALY_PARAM && workParam != MOORE_PARAM)
     {
