@@ -432,13 +432,13 @@ vector<vector<pair<string, string>>> GetNewTransitionTable(map<string, string> c
 MealyAutomata MinimizeMealy(MealyAutomata automata) {
     MealyAutomata minAut;
     minAut.inputs = automata.inputs;
-    map<string, string> currClassTable;
-    map<string, string> classTable = GetClassTable(automata, minAut.statesTable, currClassTable, NEED_INITIALIZATION);
+    map<string, string> classTable;
+    classTable = GetClassTable(automata, minAut.statesTable, classTable, NEED_INITIALIZATION);
     vector<string> statesTable;
     bool canBeMinimized = true;
     while (canBeMinimized) {
         vector<string> currStatesTable;
-        currClassTable = GetClassTable(automata, currStatesTable, classTable, NOT_NEED_INITIALIZATION);
+        classTable = GetClassTable(automata, currStatesTable, classTable, NOT_NEED_INITIALIZATION);
         if (statesTable == currStatesTable) {
             canBeMinimized = false;
         }
@@ -446,7 +446,7 @@ MealyAutomata MinimizeMealy(MealyAutomata automata) {
             statesTable = currStatesTable;
         }
         if (!canBeMinimized) {
-            minAut.transitions = GetNewTransitionTable(currClassTable, automata);
+            minAut.transitions = GetNewTransitionTable(classTable, automata);
             minAut.statesTable = currStatesTable;
         }
     }
@@ -558,7 +558,7 @@ int main(int argc, char* argv[])
     string inputFile = argv[2];
     string outputFile = argv[3];
     /*string workParam = MEALY_PARAM;
-    string inputFile = "2_source_mealy.csv";
+    string inputFile = "3_source_mealy.csv";
     string outputFile = "output.csv";*/
     if (workParam != MEALY_PARAM && workParam != MOORE_PARAM)
     {
