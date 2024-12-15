@@ -558,27 +558,19 @@ int main(int argc, char* argv[])
     string inputFile = argv[2];
     string outputFile = argv[3];
     /*string workParam = MOORE_PARAM;
-    string inputFile = "1_moore.csv";
+    string inputFile = "2_moore.csv";
     string outputFile = "output.csv";*/
-    if (workParam != MEALY_PARAM && workParam != MOORE_PARAM)
-    {
-        cerr << "Wrong param" << endl;
-        return 1;
-    }
     if (workParam == MEALY_PARAM) {
         MealyAutomata mealyAut = ReadMealy(inputFile);
         mealyAut = RemoveUnreachableStatesMealy(mealyAut);
         mealyAut = MinimizeMealy(mealyAut);
         ExportMealyToCSV(mealyAut, outputFile);
     }
-    else
-    {
-        if (workParam == MOORE_PARAM) {
-            MooreAutomata aut = ReadMoore(inputFile);
-            aut = RemoveUnreachableStatesMoore(aut);
-            aut = MinimizeMoore(aut);
-            ExportMooreToCSV(aut, outputFile);
-        }
+    if (workParam == MOORE_PARAM) {
+        MooreAutomata aut = ReadMoore(inputFile);
+        aut = RemoveUnreachableStatesMoore(aut);
+        aut = MinimizeMoore(aut);
+        ExportMooreToCSV(aut, outputFile);
     }
     return 0;
 }
