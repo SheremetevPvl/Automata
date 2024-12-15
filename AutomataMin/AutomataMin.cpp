@@ -557,8 +557,8 @@ int main(int argc, char* argv[])
     string workParam = argv[1];
     string inputFile = argv[2];
     string outputFile = argv[3];
-    /*string workParam = MEALY_PARAM;
-    string inputFile = "3_source_mealy.csv";
+    /*string workParam = MOORE_PARAM;
+    string inputFile = "1_moore.csv";
     string outputFile = "output.csv";*/
     if (workParam != MEALY_PARAM && workParam != MOORE_PARAM)
     {
