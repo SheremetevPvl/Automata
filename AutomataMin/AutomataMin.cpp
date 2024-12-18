@@ -534,15 +534,19 @@ MooreAutomata MinimizeMoore(MooreAutomata automata) {
     while (canBeMinimized) {
         vector<string> currStatesTable;
         currClassTable = GetClassTableForMoore(automata, classTable, currStatesTable, outputs);
+        cout << statesTable.size() << " ";
+        cout << currStatesTable.size() << "\n";
         if (currStatesTable == statesTable) {
             canBeMinimized = false;
             minAut.statesTable = currStatesTable;
         }
         else
         {
+            statesTable = currStatesTable;
             classTable = currClassTable;
         }
     }
+    minAut.statesTable = statesTable;
     minAut.transitions = GetNewTransitionTableForMoore(automata, classTable);
     minAut.outputs = outputs;
     return minAut;
@@ -557,8 +561,8 @@ int main(int argc, char* argv[])
     string workParam = argv[1];
     string inputFile = argv[2];
     string outputFile = argv[3];
-    /*string workParam = MOORE_PARAM;
-    string inputFile = "2_moore.csv";
+   /* string workParam = MOORE_PARAM;
+    string inputFile = "4_moore.csv";
     string outputFile = "output.csv";*/
     if (workParam == MEALY_PARAM) {
         MealyAutomata mealyAut = ReadMealy(inputFile);
