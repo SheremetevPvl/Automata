@@ -42,7 +42,8 @@ vector<wstring> ReadGrammarFromFile(const string& filename) {
         cerr << "Error: Unable to open file " << filename << endl;
         exit(1);
     }
-    file.imbue(std::locale("en_US.UTF-8"));
+    //file.imbue(std::locale("en_US.UTF-8"));
+    file.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>));
     vector<wstring> lines;
     wstring line;
     while (getline(file, line)) {
@@ -293,7 +294,7 @@ void ExportToFile(Grammar grammar, const std::string& outputFileName) {
     if (!writer.is_open()) {
         throw runtime_error("Could not open file for writing.");
     }
-    writer.imbue(std::locale("en_US.UTF-8"));
+    writer.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>));
     writer << accumulate(headerOfFinals.begin() + 1, headerOfFinals.end(), headerOfFinals[0], [](const wstring& a, const wstring& b) { return a + L";" + b; }) << endl;
     writer << accumulate(header2.begin() + 1, header2.end(), header2[0], [](const wstring& a, const wstring& b) { return a + L";" + b; }) << endl;
     for (const auto& row : rows) {
@@ -307,7 +308,7 @@ int main(int argc, char* argv[])
 {
     string grammarFile = argv[1];
     string outputFile = argv[2];
-    /*string grammarFile = "right_input_2.txt";
+   /* string grammarFile = "right_input_2.txt";
     string outputFile = "output.csv";*/
     //wcout.imbue(locale("en_US.UTF-8"));
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
