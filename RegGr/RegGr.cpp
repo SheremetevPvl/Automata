@@ -42,6 +42,7 @@ vector<wstring> ReadGrammarFromFile(const string& filename) {
         cerr << "Error: Unable to open file " << filename << endl;
         exit(1);
     }
+    file.imbue(std::locale("en_US.UTF-8"));
     vector<wstring> lines;
     wstring line;
     while (getline(file, line)) {
@@ -132,7 +133,7 @@ bool CheckLeftGrammar(vector<wstring> rules) {
 
 void ParseRightGrammar(const vector<wstring>& rules, Grammar& grammar) {
     wregex grammarPattern(LR"(^\s*<(\w+)>\s*->\s*([\wε](?:\s+<\w+>)?(?:\s*\|\s*[\wε](?:\s+<\w+>)?)*)\s*$)");
-    wregex transitionPattern(LR"(^\s*([\wε]*)\s*(?:<(\w*)>)?\s*$)");   
+    wregex transitionPattern(LR"(^\s*([\wε]*)\s*(?:<(\w*)>)?\s*$)");
     for (const auto& line : rules) {
         wsmatch match;
         if (regex_match(line, match, grammarPattern)) {
@@ -159,6 +160,7 @@ void ParseRightGrammar(const vector<wstring>& rules, Grammar& grammar) {
                         grammar.Productions[state][symbol] = vector<wstring>();
                     }
                     grammar.Productions[state][symbol].push_back(nextState);
+                    //wcout << nextState << " " << symbol << " " << state << "\n";
                 }
             }
         }
@@ -171,7 +173,6 @@ void ParseLeftGrammar(const vector<wstring>& rules, Grammar& grammar) {
     wregex transitionPattern(LR"(^\s*(?:<(\w*)>)?\s*([\wε]*)\s*$)");
 
     for (const auto& rule : rules) {
-        //wcout << rule << "\n";
         wsmatch match;
         if (regex_match(rule, match, grammarPattern)) {
             wstring state = match[1];
@@ -257,7 +258,6 @@ void ExportToFile(Grammar grammar, const std::string& outputFileName) {
         headerOfFinals.push_back(it != finalStates.end() ? L"F" : L"");
     }
     vector<wstring> header2 = { L"" };
-    size_t stateIndex = 0;
     for (size_t i = 0; i < states.size(); ++i) {
         header2.push_back(L"q" + to_wstring(i));
     }
@@ -265,7 +265,6 @@ void ExportToFile(Grammar grammar, const std::string& outputFileName) {
     map<wstring, wstring> stateIndexMap;
     for (size_t i = 0; i < states.size(); ++i) {
         stateIndexMap[states[i]] = L"q" + to_wstring(i);
-        stateIndex = i;
         //wcout << L"q" << to_wstring(i) << " = " << states[i] << "\n";
     }
 
@@ -294,7 +293,7 @@ void ExportToFile(Grammar grammar, const std::string& outputFileName) {
     if (!writer.is_open()) {
         throw runtime_error("Could not open file for writing.");
     }
-
+    writer.imbue(std::locale("en_US.UTF-8"));
     writer << accumulate(headerOfFinals.begin() + 1, headerOfFinals.end(), headerOfFinals[0], [](const wstring& a, const wstring& b) { return a + L";" + b; }) << endl;
     writer << accumulate(header2.begin() + 1, header2.end(), header2[0], [](const wstring& a, const wstring& b) { return a + L";" + b; }) << endl;
     for (const auto& row : rows) {
@@ -308,6 +307,9 @@ int main(int argc, char* argv[])
 {
     string grammarFile = argv[1];
     string outputFile = argv[2];
+    /*string grammarFile = "right_input_2.txt";
+    string outputFile = "output.csv";*/
+    //wcout.imbue(locale("en_US.UTF-8"));
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
     Grammar grammar;
     grammar.isLeftType = CheckLeftGrammar(input);
