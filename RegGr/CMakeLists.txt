@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.10)
 
 
 if (POLICY CMP0141)
@@ -9,8 +9,8 @@ endif()
 project ("RegGr")
 
 
-add_executable (AutomataMin "RegGr.cpp" "RegGr.h")
+add_executable (RegGr "RegGr.cpp" "RegGr.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET AutomataMin PROPERTY CXX_STANDARD 20)
+  set_property(TARGET RegGr PROPERTY CXX_STANDARD 20)
 endif()
