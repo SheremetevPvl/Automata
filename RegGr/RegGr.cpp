@@ -308,8 +308,6 @@ int main(int argc, char* argv[])
 {
     string grammarFile = argv[1];
     string outputFile = argv[2];
-    locale::global(locale("en_US.UTF-8"));
-    wcout.imbue(locale("en_US.UTF-8"));
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
     Grammar grammar;
     grammar.isLeftType = CheckLeftGrammar(input);
