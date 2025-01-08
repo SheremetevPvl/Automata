@@ -8,7 +8,7 @@ using namespace std;
 
 struct Grammar {
     bool isLeftType = false;
-    vector<wstring> statesWith_ε_Input = {};
+    wstring finalState = L"";
     wstring FirstState = L"";
     map<wstring, map<wstring, vector<wstring>>> Productions;
 };
@@ -163,6 +163,9 @@ void ParseLeftGrammar(const vector<wstring>& rules, Grammar& grammar) {
             if (grammar.Productions.find(state) == grammar.Productions.end()) {
                 grammar.Productions[state] = map<wstring, vector<wstring>>();
             }
+            if (grammar.finalState.empty()) {
+                grammar.finalState = state;
+            }
             for (const auto& trans : transitions) {
                 wsmatch transMatch;
                 if (regex_match(trans, transMatch, transitionPattern)) {
@@ -172,9 +175,6 @@ void ParseLeftGrammar(const vector<wstring>& rules, Grammar& grammar) {
                     if (grammar.Productions.find(nextState) == grammar.Productions.end()) {
                         grammar.Productions[nextState] = map<wstring, vector<wstring>>();
                         grammar.Productions[nextState][symbol] = vector<wstring>{ state };
-                        if (symbol == END_SYMBOL_CH) {
-                            grammar.statesWith_ε_Input.push_back(state);
-                        }
                         // для конечных состояний {{H, E}, lol}
                     }
                     else {
@@ -226,13 +226,8 @@ void ExportToFile(Grammar grammar, const std::string& outputFileName) {
     vector<wstring> headerOfFinals = { L"" };
     vector<wstring> finalStates;
     if (grammar.isLeftType) {
-        finalStates = grammar.Productions[EMPTY_STATE_CH][END_SYMBOL_CH];
+        finalStates.push_back(grammar.finalState);
         // собираем для левосторонней состояния без переходов с входом по ε
-        for (const auto& state : grammar.statesWith_ε_Input) {
-            if (grammar.Productions[state].empty()) {
-                finalStates.push_back(state);
-            }
-        }
     }
     else {
         finalStates.push_back(FINAL_STATE_CH);
@@ -295,7 +290,7 @@ int main(int argc, char* argv[])
 {
     string grammarFile = argv[1];
     string outputFile = argv[2];
-   /* string grammarFile = "left_input_2.txt";
+    /*string grammarFile = "left_input_2.txt";
     string outputFile = "output.csv";*/
     //std::wcout.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>));
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
