@@ -54,45 +54,6 @@ vector<wstring> ReadGrammarFromFile(const string& filename) {
     return grammar;
 }
 
-bool IsLeftGrammar(wstring& input) {
-    wregex lPattern(LR"(<[^>]+>\s*[^|\s])"); // <строка> символ
-    wregex rPattern(LR"([^|\s]\s*<[^>]+>)"); // символ <строка>
-    smatch match;
-    wstring::const_iterator searchStart(input.cbegin());
-    vector<wstring> matches;
-
-    // Поиск совпадений для первого формата
-    auto matches_begin = wsregex_iterator(input.begin(), input.end(), lPattern);
-    auto matches_end = wsregex_iterator();
-    for (wsregex_iterator i = matches_begin; i != matches_end; ++i) {
-        wsmatch match = *i;
-        matches.push_back(match.str());
-    }
-    // Поиск совпадений для второго формата
-    matches_begin = wsregex_iterator(input.begin(), input.end(), rPattern);
-    matches_end = wsregex_iterator();
-    for (wsregex_iterator i = matches_begin; i != matches_end; ++i) {
-        wsmatch match = *i;
-        matches.push_back(match.str()); 
-    }
-    for (const auto& match : matches) {
-        // Подсчет слов в совпадении
-        wregex word_pattern(LR"(\b\w+\b)");
-        auto words_begin = wsregex_iterator(match.begin(), match.end(), word_pattern);
-        auto words_end = wsregex_iterator();
-        int word_count = distance(words_begin, words_end);
-        if (word_count == 2) {
-            if (regex_match(match, lPattern)) { //если левая
-                return true;
-            }
-            if (regex_match(match, rPattern)) { //если правая
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 bool CheckLeftGrammar(vector<wstring> rules) {
     bool isRightSided = true;
     bool isLeftSided = true;
@@ -119,7 +80,7 @@ bool CheckLeftGrammar(vector<wstring> rules) {
                 production.erase(0, 2);
                 first = false;
             }
-            if (regex_search(production, wregex(LR"(^<\w+>.*)"))) {
+            if (regex_search(production, wregex(LR"(<\w+>.*)"))) {
                 isRightSided = false;
             }
             if (regex_search(production, wregex(LR"(.*<\w+>)"))) {
@@ -322,7 +283,7 @@ int main(int argc, char* argv[])
 {
     string grammarFile = argv[1];
     string outputFile = argv[2];
-    /*string grammarFile = "left_input_3.txt";
+    /*string grammarFile = "left_input_4.txt";
     string outputFile = "output.csv";*/
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
     Grammar grammar;
