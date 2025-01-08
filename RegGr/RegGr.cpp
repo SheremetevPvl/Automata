@@ -286,7 +286,10 @@ void ExportToFile(Grammar grammar, const std::string& outputFileName) {
                 }
                 if (!mappedStates.empty()) {
                     row.push_back(accumulate(mappedStates.begin() + 1, mappedStates.end(), mappedStates[0], [](const wstring& a, const wstring& b) { return a + L"," + b; }));
-                }           
+                }
+                else {
+                    row.push_back(L"");
+                }
             }
             else {
                 row.push_back(L"");
