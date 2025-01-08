@@ -68,13 +68,12 @@ bool IsLeftGrammar(wstring& input) {
         wsmatch match = *i;
         matches.push_back(match.str());
     }
-
     // Поиск совпадений для второго формата
     matches_begin = wsregex_iterator(input.begin(), input.end(), rPattern);
     matches_end = wsregex_iterator();
     for (wsregex_iterator i = matches_begin; i != matches_end; ++i) {
         wsmatch match = *i;
-        matches.push_back(match.str());
+        matches.push_back(match.str()); 
     }
     for (const auto& match : matches) {
         // Подсчет слов в совпадении
@@ -113,12 +112,17 @@ bool CheckLeftGrammar(vector<wstring> rules) {
         while (getline(rhsIss, rhsPart, L'|')) {
             rhs.push_back(rhsPart);
         }
-
-        for (const auto& production : rhs) {
-            if (regex_match(production, wregex(LR"(^<\w+>.*)"))) {
+        bool first = true;
+        for (const auto& productionInRule : rhs) {
+            wstring production = productionInRule;
+            if (first) {
+                production.erase(0, 2);
+                first = false;
+            }
+            if (regex_search(production, wregex(LR"(^<\w+>.*)"))) {
                 isRightSided = false;
             }
-            if (regex_match(production, wregex(LR"(.*<\w+>$)"))) {
+            if (regex_search(production, wregex(LR"(.*<\w+>)"))) {
                 isLeftSided = false;
             }
         }
@@ -308,9 +312,9 @@ int main(int argc, char* argv[])
 {
     string grammarFile = argv[1];
     string outputFile = argv[2];
-   /* string grammarFile = "right_input_2.txt";
+    /*string grammarFile = "right_input_2.txt";
     string outputFile = "output.csv";*/
-    //wcout.imbue(locale("en_US.UTF-8"));
+    wcout.imbue(locale("en_US.UTF-8"));
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
     Grammar grammar;
     grammar.isLeftType = CheckLeftGrammar(input);
