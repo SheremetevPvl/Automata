@@ -54,6 +54,17 @@ vector<wstring> ReadGrammarFromFile(const string& filename) {
     return grammar;
 }
 
+std::wstring TrimString(const std::wstring& str) {
+    // Символы, которые нужно удалить (пробелы, табуляции, символы конца строки)
+    const std::wstring whitespace = L" \t\n\r";
+    size_t start = str.find_first_not_of(whitespace);
+    if (start == std::wstring::npos) {
+        return L"";
+    }
+    size_t end = str.find_last_not_of(whitespace);
+    return str.substr(start, end - start + 1);
+}
+
 bool CheckLeftGrammar(vector<wstring> rules) {
     bool isRightSided = true;
     bool isLeftSided = true;
@@ -80,10 +91,11 @@ bool CheckLeftGrammar(vector<wstring> rules) {
                 production.erase(0, 2);
                 first = false;
             }
-            if (regex_search(production, wregex(LR"(<\w+>.*)"))) {
+            production = TrimString(production);
+            if (regex_match(production, wregex(LR"(<\w+>.*)"))) {
                 isRightSided = false;
             }
-            if (regex_search(production, wregex(LR"(.*<\w+>)"))) {
+            if (regex_match(production, wregex(LR"(.*<\w+>)"))) {
                 isLeftSided = false;
             }
         }
@@ -283,8 +295,9 @@ int main(int argc, char* argv[])
 {
     string grammarFile = argv[1];
     string outputFile = argv[2];
-    /*string grammarFile = "left_input_4.txt";
+   /* string grammarFile = "left_input_2.txt";
     string outputFile = "output.csv";*/
+    //std::wcout.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>));
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
     Grammar grammar;
     grammar.isLeftType = CheckLeftGrammar(input);
