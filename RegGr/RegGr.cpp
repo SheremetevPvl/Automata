@@ -314,7 +314,7 @@ int main(int argc, char* argv[])
     string outputFile = argv[2];
     /*string grammarFile = "right_input_2.txt";
     string outputFile = "output.csv";*/
-    wcout.imbue(locale("en_US.UTF-8"));
+    //wcout.imbue(locale("en_US.UTF-8"));
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
     Grammar grammar;
     grammar.isLeftType = CheckLeftGrammar(input);
