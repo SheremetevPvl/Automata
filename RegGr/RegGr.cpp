@@ -284,7 +284,9 @@ void ExportToFile(Grammar grammar, const std::string& outputFileName) {
                 for (const auto& nextState : nextStates) {
                     mappedStates.push_back(stateIndexMap[nextState]);
                 }
-                row.push_back(accumulate(mappedStates.begin() + 1, mappedStates.end(), mappedStates[0], [](const wstring& a, const wstring& b) { return a + L"," + b; }));
+                if (!mappedStates.empty()) {
+                    row.push_back(accumulate(mappedStates.begin() + 1, mappedStates.end(), mappedStates[0], [](const wstring& a, const wstring& b) { return a + L"," + b; }));
+                }           
             }
             else {
                 row.push_back(L"");
@@ -292,7 +294,6 @@ void ExportToFile(Grammar grammar, const std::string& outputFileName) {
         }
         rows.push_back(row);
     }
-
     // Записываем в файл
     wofstream writer(outputFileName);
     if (!writer.is_open()) {
@@ -312,9 +313,8 @@ int main(int argc, char* argv[])
 {
     string grammarFile = argv[1];
     string outputFile = argv[2];
-    /*string grammarFile = "right_input_2.txt";
+    /*string grammarFile = "left_input_2.txt";
     string outputFile = "output.csv";*/
-    //wcout.imbue(locale("en_US.UTF-8"));
     vector<wstring> input = ReadGrammarFromFile(grammarFile);
     Grammar grammar;
     grammar.isLeftType = CheckLeftGrammar(input);
