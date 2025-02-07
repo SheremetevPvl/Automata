@@ -117,7 +117,7 @@ class PascalLexer:
                 while True:
 
                     end_index = self.buffer.find("}")
-
+                    #если не нашли закрытие в строке ищем дальше пока не закончится входной файл
                     if end_index != -1:
                         self.buffer = self.buffer[end_index + 1:]
                         self.current_column += end_index + 1
@@ -154,19 +154,19 @@ class PascalLexer:
             match = re.match(r"\d+(\.)?(\d+)?([eE][+-]?\d+)?", self.buffer)
             if match:
                 lexeme = match.group(0)
-
+                #проверяем дробные
                 if "." in lexeme and match.group(2) is None:  # No digits after the point
                     bad_token = Token("BAD", lexeme, self.current_line, self.current_column)
                     self.buffer = self.buffer[len(lexeme):]
                     self.current_column += len(lexeme)
                     return bad_token
-                
+                #проверка разрядов
                 if lexeme.isdigit() and len(lexeme) > 16:
                     bad_token = Token("BAD", lexeme, self.current_line, self.current_column)
                     self.buffer = self.buffer[len(lexeme):]
                     self.current_column += len(lexeme)
                     return bad_token
-
+                #проверка корректности
                 if len(self.buffer) > len(lexeme) and not re.match(r"[ \t\n\(\)\+\-\*/;,=\[\]{}<>'.:0-9]", self.buffer[len(lexeme):][0]):
                     match = re.match(r"[a-zA-Z0-9_]*", self.buffer)
                     #print(match.group(0))
@@ -181,7 +181,7 @@ class PascalLexer:
                 self.current_column += len(lexeme)
                 return token
 
-
+            #проверка идентификаторов
             match = re.match(r"[a-zA-Z_][a-zA-Z0-9_]*", self.buffer)
             if match:
                 lexeme = match.group(0)
