@@ -1,2 +1,2 @@
 dispatcher: python3.13 # Пока есть только python3.13 и python3.9
-script: lab6/lab6.py # путь до главного исполняемого файла
+script: lw6/lw6.py # путь до главного исполняемого файла
